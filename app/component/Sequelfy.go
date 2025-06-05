@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Rinai-R/Sequelfy/app/consts"
@@ -96,9 +97,10 @@ func (s *Sequelfy) Run(ctx context.Context, history []*schema.Message, sigChan c
 				Role:    schema.Assistant,
 				Content: resp.Text,
 			})
-			go func() {
-				s.Save(input, resp.Text)
-			}()
+			err = s.Save(history)
+			if err != nil {
+				klog.Error(err)
+			}
 		}
 	}
 }
@@ -134,21 +136,12 @@ func (s *Sequelfy) Clear() error {
 	return os.Remove(consts.CurFilePath)
 }
 
-func (s *Sequelfy) Save(UserText, BotText string) error {
-	var msg []*schema.Message
-	msg = append(msg, &schema.Message{
-		Role:    schema.User,
-		Content: UserText,
-	})
-	msg = append(msg, &schema.Message{
-		Role:    schema.Assistant,
-		Content: BotText,
-	})
-	bytes, err := sonic.Marshal(msg)
+func (s *Sequelfy) Save(history []*schema.Message) error {
+	bytes, err := sonic.Marshal(history)
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(consts.CurFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(consts.CurFilePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -199,6 +192,23 @@ func (s *Sequelfy) Change(HistoryFileName string) error {
 	_, err = f.Write(bytes)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *Sequelfy) RemoveAll() error {
+	dir := consts.HistoryFilePath
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read directory: %v", err)
+	}
+
+	for _, file := range files {
+		filePath := filepath.Join(dir, file.Name())
+		err := os.RemoveAll(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to remove file %s: %v", filePath, err)
+		}
 	}
 	return nil
 }

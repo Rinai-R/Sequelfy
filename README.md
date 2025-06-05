@@ -25,6 +25,9 @@ make clear
 make change
 ```
 
+## 效果展示
+![alt text](./img/image.png)
+
 ## 贡献
 欢迎提交 PR，或者在 issues 中提出问题。
 
