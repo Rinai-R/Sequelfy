@@ -23,6 +23,9 @@ make clear
 
 // 切换会话上下文
 make change
+
+// 清理磁盘
+make rm
 ```
 
 ## 效果展示
